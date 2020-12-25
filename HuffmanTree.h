@@ -1,22 +1,24 @@
 #pragma once
 
-//¹ş·òÂüÊ÷Àà
+//å“ˆå¤«æ›¼æ ‘ç±»
 
 #include "alphaTable.h"
 #include "HNode.h"
 #include <string.h>
+#include <unordered_map>
 
 class HuffmanTree
 {
 private:
-	//×ÖÄ¸±í
+	//å­—æ¯è¡¨
 	alphaTable alT;
-	//¹ş·òÂüÊ÷±í
+	//å“ˆå¤«æ›¼æ ‘è¡¨
 	HNode *HTree;
-	//¹ş·òÂü±àÂë±í
+	//å“ˆå¤«æ›¼ç¼–ç è¡¨
 	std::string *HCode;
-	//¹şÏ£Êı×é£¬½¨Á¢×Ö·ûÍ¬×ÖÄ¸±í£¬Ê÷±í£¬±àÂë±íÏÂ±ê£¨Èı¸ö±íÍ¬Ò»ÏÂ±ê£¬±íÊ¾Í¬Ò»×Ö·û£©µÄÓ³Éä
-	unsigned hash[270];
+	//å“ˆå¸Œæ•°ç»„ï¼Œå»ºç«‹å­—ç¬¦åŒå­—æ¯è¡¨ï¼Œæ ‘è¡¨ï¼Œç¼–ç è¡¨ä¸‹æ ‡ï¼ˆä¸‰ä¸ªè¡¨åŒä¸€ä¸‹æ ‡ï¼Œè¡¨ç¤ºåŒä¸€å­—ç¬¦ï¼‰çš„æ˜ å°„
+	//unsigned hash[270];
+	std::unordered_map<char, int>hash;
 
 public:
 
@@ -28,9 +30,9 @@ public:
 
 	HuffmanTree(alphaTable& alT);
 
-	//bool SelectTwoMin(unsigned &s1,unsigned &s2);
+	//unsigned char Str01_2_Ch(std::string str01);
 
-	unsigned char Str01_2_Ch(std::string str01);
+	HNode* getTree();
 
 	std::string Ch_2_01Str(char ch);
 
