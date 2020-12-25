@@ -1,0 +1,101 @@
+void HuffmanTree::Select( queue<Alpha> &fir, queue<Alpha> &sec, unsigned &min_1, unsigned &min_2){
+
+
+    //记录fir队列前两个元素,后弹出
+    //暂时不考虑fir元素数量不够的问题
+    Alpha fir_top = fir.front();
+    fir.pop();
+    Alpha fir_next = fir.front();
+    fir.pop();
+    //将这两个元素压入sec中,在sec中记录这两个元素
+    sec.push(fir_top);
+    sec.push(fir_next);
+    Alpha sec_top = fir_top;
+    Alpha sec_next = fir_next;
+    //三种情况：
+    //队列fir中的队首和第二位合并--con_1
+    //队列sec中的队首和第二位合并--con_2
+    //队列fir中的队首和sec中的队首合并--con_3
+    unsigned con_1 = fir_top.fre+fir_next.fre;
+    unsigned con_2 = fir_top.fre+sec_top.fre;
+    unsigned con_3 = sec_top.fre+sec_next.fre;
+
+    HNode root;
+
+    if (con_1<=con_2&&con_1<=con_3){
+        min_1 = fir_top.fre;
+        min_2 = fir_next.fre;
+        //根据结点建树，然后把结点pop出去
+        fir.pop();
+        fir.pop();
+    }
+    else if (con_2<=con_1&&con_2<=con_3){
+        min_1 = fir_top.fre;
+        min_2 = sec_top.fre;
+    }
+    else if (con_3<=con_2&&con_3<=con_1){
+        min_1 = sec_top.fre;
+        min_2 = sec_next.fre;
+    }
+    //对1、2初始化后，开始建树
+    while (!sec.empty()){
+        fir_top = fir.front();
+        fir.pop();
+        fir_next = fir.front();
+        fir.pop();
+
+        sec_top = sec.front();
+        sec.pop();
+        sec_next = sec.front();
+        sec.pop();
+
+         con_1 = fir_top.fre+fir_next.fre;
+         con_2 = fir_top.fre+sec_top.fre;
+         con_3 = sec_top.fre+sec_next.fre;
+
+        if (con_1<=con_2&&con_1<=con_3){
+            min_1 = fir_top.fre;
+            min_2 = fir_next.fre;
+            //根据结点建树，然后把结点pop出去
+            fir.pop();
+            fir.pop();
+        }
+        else if (con_2<=con_1&&con_2<=con_3){
+            min_1 = fir_top.fre;
+            min_2 = sec_top.fre;
+        }
+        else if (con_3<=con_2&&con_3<=con_1){
+            min_1 = sec_top.fre;
+            min_2 = sec_next.fre;
+        }
+
+    }
+}
+
+
+//建树
+HuffmanTree HuffmanTree::HuffmanCoding(alphaTable &aT){
+    //首先对字母表从小到大排序（从1开始）
+    sort(aT.alpTab+1,aT.alpTab+aT.alpNum,compare);
+    //根据字母表建立队列fir
+    queue<Alpha> fir;
+    queue<Alpha> sec;
+    for (int i = 1; i < aT.alpNum; ++i) {
+        fir.push(aT.alpTab[i]);
+    }
+
+    unsigned min1,min2;
+    int m;
+    unsigned n = aT.alpNum;
+    if(aT.alpNum<=1) { cout<<"字母个数少"<<endl;exit(0); };
+
+    int num = 0;
+    while (fir.empty()&&!sec.empty()){
+        Select(fir,sec,min1,min2);
+        HTree[min1].par = num; HTree[min2].par = num;
+        HTree[num].lch = min1; HTree[num].rch = min2;
+        HTree[num].weight = HTree[min1].weight + HTree[min2].weight;
+        num++;
+    }
+
+}
