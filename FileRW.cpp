@@ -4,17 +4,21 @@
 #include <cstring>
 #include "BitDeal.h"
 
-//¶¨Òåºê
-//È¡charÀàĞÍµÄµÚ¼¸Î»
-#define 
-//½«charÀàĞÍµÄµÚ¼¸Î»¸³ÖµÎª0»ò1
-#define 
 
 FileRW::FileRW(const char* filename)
 {
-	//ÔõÃ´·Ö±æÎÄ¼ş£¬ÊÇ¸öÎÊÌâ£¬¿ÉÄÜ»á´æÔÚ´óÁ¿µÄbug,ÏÖÔİÊ±²ÉÓÃÃû×Öºó×ººÍÎÄ¼şÍ·Êı¾İµÄË«ÖØ·½Ê½È·ÈÏ
+	if (!initFileRW(filename))
+		exit(0);
+}
+
+bool FileRW::initFileRW(const char* filename)
+{
+	this->filename = filename;
+
+	//1ä¸ºåŸç æ–‡ä»¶ï¼Œ2ä¸ºå‹ç¼©åæ–‡ä»¶ï¼Œ3ä¸ºè¯‘ç æ–‡ä»¶ï¼Œ0ä¸ºæœªæ“ä½œæ–‡ä»¶ã€‚
+	//æ€ä¹ˆåˆ†è¾¨æ–‡ä»¶ï¼Œæ˜¯ä¸ªé—®é¢˜ï¼Œå¯èƒ½ä¼šå­˜åœ¨å¤§é‡çš„bug,ç°æš‚æ—¶é‡‡ç”¨åå­—åç¼€å’Œæ–‡ä»¶å¤´æ•°æ®çš„åŒé‡æ–¹å¼ç¡®è®¤
 	std::ifstream fin(filename, std::ios::in | std::ios::binary);
-	if (!fin.is_open()) exit(0);
+	if (!fin.is_open()) return false;
 
 	char a[4] = { 0 };
 	fin.read(a, sizeof(a));
@@ -26,39 +30,84 @@ FileRW::FileRW(const char* filename)
 			fileType = 2;
 		else if (headstr == "dec")
 			fileType = 3;
-		else exit(0);
+		else false;
 	}
 	else if (namestr == "txt" || namestr == "bmp")
 		fileType = 1;
-	else exit(0);
+	else 
+		return false;
 
 	fin.close();
 
 	if (fileType == 1) {
 		Tree.initHTree(*(new alphaTable(filename, false)));
+		leaveBitNum = initLeaveBitNum(filename);
+		if (leaveBitNum = -1) return false;
 	}
 	else if (fileType == 2) {
-		Tree.initHTree(*(new alphaTable(filename, true, sizeof(a))));
+		Tree.initHTree(*(new alphaTable(filename, true, sizeof(a) + sizeof(leaveBitNum))));
 	}
-	else;
+	else ;
+	return true;
 }
 
-bool FileRW::decodF2comF(const char* tofile)
+int FileRW::initLeaveBitNum(const char* filename)
 {
-	return false;
+	if (fileType != 1) return -1;
+
+	std::ifstream fin(filename, std::ios::in | std::ios::binary);
+	if (!fin.is_open()) return -1;
+
+	char ch;
+	int sum_bit = 0;
+	while (fin.read(&ch, sizeof(char))) {
+		std::string code = this->Tree.Ch_2_01Str(ch);
+		sum_bit += code.length();
+	}
+
+	fin.close();
+
+	return (sum_bit % sizeof(char));
 }
+
+bool FileRW::codeF2decodF(const char* tofile)
+{
+	std::ofstream fout(tofile, std::ios::out);
+	char a[4] = "dec";
+	fout.write(a,sizeof(a));
+	Tree.getAlphaTable().writeHdataToFile(tofile, sizeof(a));
+
+	std::ifstream fin(filename, std::ios::in);
+	if(!fin.is_open())	return false;
+	char ch;
+	while (fin.get(ch)) {
+		std::string code = Tree.Ch_2_01Str(ch);
+		for (const auto& it : code) {
+			fout.put(it);
+		}
+	}
+
+	fin.close();
+	fout.close();
+	return true;
+}
+
 
 bool FileRW::codeF2comF(const char* tofile)
-{
+{ //åœ¨å“ªè®¡ç®—å‰©ä½™bitæ•°????,æ¢å¥è¯è¯´ï¼Œå‹ç¼©æ–‡ä»¶é‡ŒleaveBitNumæ”¾åœ¨å“ªï¼Ÿï¼Œéœ€è¦å°†æ•´ä¸ªæ–‡ä»¶éƒ½è¯»è¿‡ï¼Œæ‰èƒ½çŸ¥é“leavebitnumã€‚
+  //å…ˆæŠŠå‰©ä½™å­—èŠ‚æ•°æ”¾åœ¨æ–‡ä»¶åç¼€ä¹‹åã€‚
 	if (fileType != 1) return false;
+
 	std::ofstream fout(tofile, std::ios::out | std::ios::binary);
 	if (!fout.is_open()) return false;
 	char a[4] = "cpr";
 	fout.write(a, sizeof(a));
+	fout.write((char*)&leaveBitNum, sizeof(leaveBitNum));
+	Tree.getAlphaTable().writeHdataToFile(tofile, sizeof(a) + sizeof(leaveBitNum));
 	std::ifstream fin(filename, std::ios::in | std::ios::binary);
 	if (!fin.is_open()) return false;
 
-	//±àÂë²¢Ñ¹Ëõ¹ı³Ì
+	//ç¼–ç å¹¶å‹ç¼©è¿‡ç¨‹
 	BitDeal BD;
 	char ch;
 	char value;
@@ -66,7 +115,7 @@ bool FileRW::codeF2comF(const char* tofile)
 	while (fin.read(&ch,sizeof(char))) {
 		std::string code = this->Tree.Ch_2_01Str(ch);
 		for (const auto& it : code) {
-			//½«µÚbitnumÎ»×ª»¯³Éit;
+			//å°†ç¬¬bitnumä½è½¬åŒ–æˆit;
 			BD.setBit(value, bitnum, it - '0');
 			if (bitnum++ == 8) {
 				fout.write(&value, sizeof(value));
@@ -74,7 +123,7 @@ bool FileRW::codeF2comF(const char* tofile)
 			}
 		}
 		if (fin.eof()) {
-			if (bitnum != 1)) leaveBitNum = 0;
+			if (bitnum != 1) leaveBitNum = 0;
 			else {
 				fout.write(&value, sizeof(value));
 				leaveBitNum = 9 - bitnum;
@@ -90,7 +139,7 @@ bool FileRW::codeF2comF(const char* tofile)
 
 bool FileRW::comF2codF(const char* tofile)
 {
-	if (fileType != 3) return false;
+	if (fileType != 2) return false;
 
 	std::ofstream fout(tofile, std::ios::out | std::ios::binary);
 	if (!fout.is_open()) return false;
@@ -98,14 +147,14 @@ bool FileRW::comF2codF(const char* tofile)
 	if (!fin.is_open()) return false;
 	alphaTable &ALP = Tree.getAlphaTable();
 	int indx =	sizeof("cpr") + 
+				sizeof(leaveBitNum) +
 				sizeof(ALP.getAlpNum()) + 
-				ALP.getAlpNum() * (sizeof(ALP.alpTab[0].ch) + 
-				sizeof(ALP.alpTab[0].fre));
+				ALP.getAlpNum() * (sizeof(ALP.alpTab[0].ch) + sizeof(ALP.alpTab[0].fre));
 	fin.seekg(indx);
 
 	BitDeal BD;
 	char ch;
-	//bitnumµÄº¬Òå:È¡chµÄµÚ¼¸Î»
+	//bitnumçš„å«ä¹‰:å–chçš„ç¬¬å‡ ä½
 	int bitnum = 9;
 	unsigned num;
 	HNode* tree = Tree.getTree(); int n = Tree.getAlphaTable().alpNum;
@@ -126,11 +175,13 @@ bool FileRW::comF2codF(const char* tofile)
 			p = 2 * n - 1;
 		}
 	}
-	//Ê£Óà×Ö·ûÒ²¿¼ÂÇÁË£¬µ«ÊÇÃ»ÓĞµ÷ÊÔ£¬¾Í¿´ÔõÃ´´Ó¹ş·òÂüÊ÷Àï»ñµÃ×Ö·ûÁË
-	/*¸ù¾İ¹ş·òÂüÊ÷»ØËİ,ÕÒµ½ÄÇ¸ö×Ö·û*/
-	/*Ë¼Â·ÊÇ¹ş·òÂüÊ÷Àà»ñµÃÒ»¸ö×Ö·û´®£¬È»ºó·µ»ØÒ»¸ö½á¹û£¬·µ»Ø¶ÔÓ¦µÄ×Ö·û£¬»òÒìÀà×Ö·û£¨£¿£¿£¿£©
-	* Èç¹ûÊÇ½«ÎÄ¼şÃû¸øÊ÷ÀàµÄ»°£¬¾Í²»Èç¿ªÊ¼µÄÊ±ºò¾ÍÖ±½Ó°ÑÎÄ¼ş¸øÊ÷Àà£¨¼´È¡ÏûÎÄ¼şÀàµÄ²Ù×÷£©
-	* Èç¹ûÊÇ½«Ê÷µÄÖ¸Õë´«³öÀ´µÄ»°£¬ÄÇÃ´Ïàµ±ÓÚ½âÂëÔÚÊ÷Íâ½øĞĞ£¬¶ÔÊ÷µÄ·â×°ĞÔ¾ÍÊ§°ÜÁË¡£
+	//å‰©ä½™å­—ç¬¦ä¹Ÿè€ƒè™‘äº†ï¼Œä½†æ˜¯æ²¡æœ‰è°ƒè¯•ï¼Œå°±çœ‹æ€ä¹ˆä»å“ˆå¤«æ›¼æ ‘é‡Œè·å¾—å­—ç¬¦äº†
+	/*æ ¹æ®å“ˆå¤«æ›¼æ ‘å›æº¯,æ‰¾åˆ°é‚£ä¸ªå­—ç¬¦*/
+	/*æ€è·¯æ˜¯å“ˆå¤«æ›¼æ ‘ç±»è·å¾—ä¸€ä¸ªå­—ç¬¦ä¸²ï¼Œç„¶åè¿”å›ä¸€ä¸ªç»“æœï¼Œè¿”å›å¯¹åº”çš„å­—ç¬¦ï¼Œæˆ–å¼‚ç±»å­—ç¬¦ï¼ˆï¼Ÿï¼Ÿï¼Ÿï¼‰
+	* å¦‚æœæ˜¯å°†æ–‡ä»¶åç»™æ ‘ç±»çš„è¯ï¼Œå°±ä¸å¦‚å¼€å§‹çš„æ—¶å€™å°±ç›´æ¥æŠŠæ–‡ä»¶ç»™æ ‘ç±»ï¼ˆå³å–æ¶ˆæ–‡ä»¶ç±»çš„æ“ä½œï¼‰
+	* å¦‚æœæ˜¯å°†æ ‘çš„æŒ‡é’ˆä¼ å‡ºæ¥çš„è¯ï¼Œé‚£ä¹ˆç›¸å½“äºè§£ç åœ¨æ ‘å¤–è¿›è¡Œï¼Œå¯¹æ ‘çš„å°è£…æ€§å°±å¤±è´¥äº†ã€‚
 	*/
+	fin.close();
+	fout.close();
 	return false;
 }
