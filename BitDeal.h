@@ -1,16 +1,16 @@
 #pragma once
 
-//¶ÔÒ»¸öcharÀàÐÍµÄ8Î»½øÐÐ²Ù×÷µÄº¯Êý£¬·â×°³ÉÒ»¸öÀà
+//å¯¹ä¸€ä¸ªcharç±»åž‹çš„8ä½è¿›è¡Œæ“ä½œçš„å‡½æ•°ï¼Œå°è£…æˆä¸€ä¸ªç±»
 class BitDeal
 {
 public:
 	unsigned getBit(char& c, int i) {
-		return (c >> i) & 1;
+		return (c >> (i-1)) & 1;
 	}
 	void setBit(char& c, int i, int v) {
 		if (v)
-			c |= (1 << i);
+			c |= (1 << (i-1));
 		else
-			c &= ~(1 << i);
+			c &= ~(1 << (i-1));
 	}
 };
